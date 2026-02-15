@@ -51,7 +51,7 @@ void testWideMatrixSVD() {
     assertSVD(svd, mat);
 }
 void testQR() {
-    Matrix<double> mat(10, 10);
+    Matrix<double> mat(1000, 1000);
     fillMatrixRandomValues(mat, double(0), double(1));
     Timer t;
     t.startTimer();
@@ -90,7 +90,7 @@ void assertQR(QR<A>& qr, Matrix<A>& origiMat) {
     Matrix<A>&  R           = qr.R;
     std::string whichMatrix = (R.rows == R.cols) ? "square" : ((R.rows > R.cols) ? "thin" : "wide");
     Matrix<A>   recon(R.rows, R.cols);
-    matrixProduct(Q, R, recon);
+    matrixMultMatrix(Q, R, recon);
     A maxDiff = A(0);
     for (uint32_t i = 0; i < R.rows; i++)
     {

@@ -5,6 +5,6 @@ int main() {
     //compressImage<double>("C:/Git_Repo/myprojects/image-converter_c++/example_images/images.jpg",
     //    "C:/Git_Repo/myprojects/image-converter_c++/example_images/imagesComp.png", 10, true);
 
-    testAll();
+    testQR();
     return 0;
 }

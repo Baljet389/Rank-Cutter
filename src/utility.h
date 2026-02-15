@@ -11,6 +11,8 @@ template<typename A>
 void fillMatrixRandomValues(Matrix<A>& mat, A disStart, A disStop);
 template<typename A>
 void reconstructSVD(SVD<A>& svd, Matrix<A>& res, uint32_t rank);
+template<typename A>
+inline A calculateDot(A* vec1, A* vec2, uint32_t size);
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
                          MatrixInterface<A, DerivedB>& matB,
@@ -26,6 +28,11 @@ template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
                                     MatrixInterface<A, DerivedB>& matB,
                                     MatrixInterface<A, DerivedR>& matC);
+// calculates A = A - B * C
+template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
+void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
+                                 MatrixInterface<A, DerivedB>& matB,
+                                 MatrixInterface<A, DerivedR>& matC);
 
 struct Timer {
     std::chrono::steady_clock::time_point start;
@@ -166,13 +173,12 @@ void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
                                  MatrixInterface<A, DerivedB>& matB,
                                  MatrixInterface<A, DerivedR>& matC) {
 
-    // Dimensional Asserts for A = A - (B * C)
-    assert(matA.isContiguous());  // Assuming your getColumnPointer implies this
+    assert(matA.isContiguous());
     assert(matB.isContiguous());
 
-    assert(matA.getRows() == matB.getRows());  // Heights must match
-    assert(matB.getCols() == matC.getRows());  // Inner dimension (k)
-    assert(matA.getCols() == matC.getCols());  // Widths must match
+    assert(matA.getRows() == matB.getRows());
+    assert(matB.getCols() == matC.getRows());
+    assert(matA.getCols() == matC.getCols());
 
     const uint32_t rowsA  = matA.getRows();
     const uint32_t colsA  = matA.getCols();
@@ -193,5 +199,17 @@ void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
             }
         }
     }
+}
+template<typename A>
+inline A calculateDot(A* vec1, A* vec2, uint32_t size) {
+    assert(vec1);
+    assert(vec2);
+
+    A res = A(0);
+    for (uint32_t i = 0; i < size; i++)
+    {
+        res += vec1[i] * vec2[i];
+    }
+    return res;
 }
 #endif

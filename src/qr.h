@@ -19,7 +19,7 @@ void generatePanel(QRWorkspace<A>& ws, uint32_t currBlockSize, uint32_t col);
 template<typename A>
 A calcNormedHouseholder(std::vector<A>& v);
 template<typename A>
-void updateTMatrix(QRWorkspace<A>& ws, A tauLeft, uint32_t col, uint32_t rowOffset);
+void updateTMatrix(QRWorkspace<A>& ws, uint32_t col, uint32_t currBlockSize);
 template<typename A>
 void applyBlockReflectorToR(BlockUpdateWorkspace<A>& blockws);
 template<typename A>
@@ -31,10 +31,12 @@ struct QRWorkspace {
     Matrix<A>&     V;
     Matrix<A>&     T;
     std::vector<A> vL;
-    QRWorkspace(Matrix<A>& r, Matrix<A>& v, Matrix<A>& t) :
+    Matrix<A>&     VTMultVStorage;
+    QRWorkspace(Matrix<A>& r, Matrix<A>& v, Matrix<A>& t, Matrix<A>& vTMultVStorage) :
         R(r),
         V(v),
-        T(t) {}
+        T(t),
+        VTMultVStorage(vTMultVStorage) {}
 
     void reserve(uint32_t n) { vL.reserve(n); }
 };
@@ -76,7 +78,7 @@ QR<A> calcQRBlocked(const Matrix<A>& mat, bool updateQ) {
     Matrix<A>& Q            = qr.Q;
     Matrix<A>& R            = qr.R;
     uint32_t   minDimension = std::min(R.rows, R.cols);
-    uint32_t   blockSize    = 64;
+    uint32_t   blockSize    = 32;
 
     Matrix<A> V(R.rows, blockSize);
     Matrix<A> T(blockSize, blockSize);
@@ -87,12 +89,15 @@ QR<A> calcQRBlocked(const Matrix<A>& mat, bool updateQ) {
     Matrix<A> W2(R.rows, blockSize);
     Matrix<A> Y2(R.rows, blockSize);
 
-    QRWorkspace<A> ws(R, V, T);
+    Matrix<A> VTMultVStorage(blockSize, blockSize);
+
+    QRWorkspace<A> ws(R, V, T, VTMultVStorage);
     ws.reserve(R.rows);
     for (uint32_t i = 0; i < minDimension; i += blockSize)
     {
         uint32_t currBlockSize = std::min(blockSize, minDimension - i);
-        V.setValue(0);
+        V.setValue(A(0));
+        T.setValue(A(0));
         generatePanel(ws, currBlockSize, i);
 
 
@@ -130,6 +135,7 @@ void generatePanel(QRWorkspace<A>& ws, uint32_t currBlockSize, uint32_t col) {
     std::vector<A>& vL = ws.vL;
     Matrix<A>&      R  = ws.R;
     Matrix<A>&      V  = ws.V;
+    Matrix<A>&      T  = ws.T;
 
     for (uint32_t i = col; i < col + currBlockSize; i++)
     {
@@ -147,51 +153,47 @@ void generatePanel(QRWorkspace<A>& ws, uint32_t currBlockSize, uint32_t col) {
 
         for (uint32_t j = i; j < currBlockSize + col; j++)
         {
-            A  dot        = 0;
             A* RColumnPtr = R.getColumnPointer(j) + i;
-            for (uint32_t k = 0; k < m; k++)
-                dot += vL[k] * RColumnPtr[k];
-            A prod = tauLeft * dot;
+            A  dot        = calculateDot(vL.data(), RColumnPtr, m);
+            A  prod       = tauLeft * dot;
             for (uint32_t k = 0; k < m; k++)
                 RColumnPtr[k] -= vL[k] * prod;
         }
 
-        updateTMatrix(ws, tauLeft, i - col, i);
+        T(i - col, i - col) = tauLeft;
     }
+    updateTMatrix(ws, col, currBlockSize);
 }
 template<typename A>
-void updateTMatrix(QRWorkspace<A>& ws, A tauLeft, uint32_t col, uint32_t rowOffset) {
+void updateTMatrix(QRWorkspace<A>& ws, uint32_t col, uint32_t currBlockSize) {
 
     // $$T_j = \begin{pmatrix} T_{j-1} & -\tau_j T_{j-1} V_{j-1}^T v_j \\ 0 & \tau_j \end{pmatrix}$$
 
+    const uint32_t effectiveRows = ws.R.rows - col;
+    Matrix<A>&     V             = ws.V;
+    Matrix<A>&     T             = ws.T;
+    Matrix<A>&     res           = ws.VTMultVStorage;
 
-    std::vector<A>& vL = ws.vL;
-    Matrix<A>&      V  = ws.V;
-    Matrix<A>&      T  = ws.T;
+    SubMatrixView<A> Vblock(V, col, 0, effectiveRows, currBlockSize);
+    transposeMultMatrix(Vblock, Vblock, res);
 
-    T(col, col) = tauLeft;
-    if (col == 0)
-        return;
-
-    std::vector<A> temp(col, A(0));
-
-    for (uint32_t j = 0; j < col; j++)
+    for (uint32_t i = 0; i < currBlockSize; i++)
     {
-        A dot = 0;
-        for (uint32_t k = 0; k < vL.size(); k++)
+        A* TColumnPtrI = T.getColumnPointer(i);
+        for (uint32_t k = 0; k < i; k++)
         {
-            dot += vL[k] * V(k + rowOffset, j);
+            A* TColumnPtrK = T.getColumnPointer(k);
+            A  factor      = res(k, i);
+            for (uint32_t j = 0; j <= k; j++)
+            {
+                TColumnPtrI[j] += TColumnPtrK[j] * factor;
+            }
         }
-        temp[j] = dot;
-    }
-    for (uint32_t j = 0; j < col; j++)
-    {
-        A sum = 0;
-        for (uint32_t k = j; k < col; k++)
+        A leadingElement = -T(i, i);
+        for (uint32_t j = 0; j < i; j++)
         {
-            sum += T(j, k) * temp[k];
+            TColumnPtrI[j] *= leadingElement;
         }
-        T(j, col) = -tauLeft * sum;
     }
 }
 template<typename A>
