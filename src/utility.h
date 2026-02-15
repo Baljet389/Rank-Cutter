@@ -91,24 +91,30 @@ void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
     assert(matB.isContiguous());
     assert(matA.getRows() == matB.getRows());
 
-    const uint32_t colsA = matA.getCols();
-    const uint32_t colsB = matB.getCols();
-    const uint32_t rowsB = matB.getRows();
+    const uint32_t     colsA = matA.getCols();
+    const uint32_t     colsB = matB.getCols();
+    const uint32_t     rowsB = matB.getRows();
+    constexpr uint32_t BS    = 64;
 
-    for (uint32_t r = 0; r < colsA; r++)
-    {
-        A* colAPtr = matA.getColumnPointer(r);
-        for (uint32_t k = 0; k < colsB; k++)
-        {
-            A* colBPtr = matB.getColumnPointer(k);
-            A  dot     = 0;
-            for (uint32_t c = 0; c < rowsB; c++)
-            {
-                dot += colAPtr[c] * colBPtr[c];
-            }
-            result(r, k) = dot;
-        }
-    }
+    result.setValue(0);
+#pragma omp parallel for schedule(static)
+    for (uint32_t jj = 0; jj < colsA; jj += BS)
+        for (uint32_t kk = 0; kk < rowsB; kk += BS)
+            for (uint32_t ii = 0; ii < colsB; ii += BS)
+                for (uint32_t r = jj; r < std::min(jj + BS, colsA); r++)
+                {
+                    A* colAPtr = matA.getColumnPointer(r);
+                    for (uint32_t k = ii; k < std::min(ii + BS, colsB); k++)
+                    {
+                        A* colBPtr = matB.getColumnPointer(k);
+                        A  dot     = 0;
+                        for (uint32_t c = kk; c < std::min(kk + BS, rowsB); c++)
+                        {
+                            dot += colAPtr[c] * colBPtr[c];
+                        }
+                        result(r, k) += dot;
+                    }
+                }
 }
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
@@ -119,24 +125,29 @@ void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
     assert(matB.isContiguous());
     assert(matA.getCols() == matB.getRows());
 
-    const uint32_t rowsA = matA.getRows();
-    const uint32_t colsA = matA.getCols();
-    const uint32_t colsB = matB.getCols();
+    const uint32_t     rowsA = matA.getRows();
+    const uint32_t     colsA = matA.getCols();
+    const uint32_t     colsB = matB.getCols();
+    constexpr uint32_t BS    = 64;
 
     result.setValue(0);
-    for (uint32_t r = 0; r < colsB; r++)
-    {
-        A* resColPtr = result.getColumnPointer(r);
-        for (uint32_t k = 0; k < colsA; k++)
-        {
-            A  val        = matB(k, r);
-            A* matAColPtr = matA.getColumnPointer(k);
-            for (uint32_t c = 0; c < rowsA; c++)
-            {
-                resColPtr[c] += matAColPtr[c] * val;
-            }
-        }
-    }
+#pragma omp parallel for schedule(static)
+    for (uint32_t kk = 0; kk < rowsA; kk += BS)
+        for (uint32_t ii = 0; ii < colsA; ii += BS)
+            for (uint32_t jj = 0; jj < colsB; jj += BS)
+                for (uint32_t r = jj; r < std::min(jj + BS, colsB); r++)
+                {
+                    A* resColPtr = result.getColumnPointer(r);
+                    for (uint32_t k = ii; k < std::min(ii + BS, colsA); k++)
+                    {
+                        A  val        = matB(k, r);
+                        A* matAColPtr = matA.getColumnPointer(k);
+                        for (uint32_t c = kk; c < std::min(kk + BS, rowsA); c++)
+                        {
+                            resColPtr[c] += matAColPtr[c] * val;
+                        }
+                    }
+                }
 }
 
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
@@ -150,23 +161,28 @@ void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
     assert(matA.getCols() == matC.getRows());
     assert(matB.getCols() == matC.getCols());
 
-    const uint32_t rowsA = matA.getRows();
-    const uint32_t colsA = matA.getCols();
-    const uint32_t colsB = matB.getCols();
+    const uint32_t     rowsA = matA.getRows();
+    const uint32_t     colsA = matA.getCols();
+    const uint32_t     colsB = matB.getCols();
+    constexpr uint32_t BS    = 64;
 
-    for (uint32_t r = 0; r < colsA; r++)
-    {
-        A* aColPtr = matA.getColumnPointer(r);
-        for (uint32_t k = 0; k < colsB; k++)
-        {
-            A* bColPtr = matB.getColumnPointer(k);
-            A  val     = matC(r, k);
-            for (uint32_t c = 0; c < rowsA; c++)
-            {
-                aColPtr[c] -= bColPtr[c] * val;
-            }
-        }
-    }
+#pragma omp parallel for schedule(static)
+    for (uint32_t jj = 0; jj < rowsA; jj += BS)
+        for (uint32_t ii = 0; ii < colsB; ii += BS)
+            for (uint32_t kk = 0; kk < colsA; kk += BS)
+                for (uint32_t r = kk; r < std::min(kk + BS, colsA); r++)
+                {
+                    A* aColPtr = matA.getColumnPointer(r);
+                    for (uint32_t k = ii; k < std::min(ii + BS, colsB); k++)
+                    {
+                        A* bColPtr = matB.getColumnPointer(k);
+                        A  val     = matC(r, k);
+                        for (uint32_t c = jj; c < std::min(jj + BS, rowsA); c++)
+                        {
+                            aColPtr[c] -= bColPtr[c] * val;
+                        }
+                    }
+                }
 }
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
@@ -180,25 +196,30 @@ void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
     assert(matB.getCols() == matC.getRows());
     assert(matA.getCols() == matC.getCols());
 
-    const uint32_t rowsA  = matA.getRows();
-    const uint32_t colsA  = matA.getCols();
-    const uint32_t innerK = matB.getCols();
+    const uint32_t     rowsA  = matA.getRows();
+    const uint32_t     colsA  = matA.getCols();
+    const uint32_t     innerK = matB.getCols();
+    constexpr uint32_t BS     = 64;
 
-    for (uint32_t j = 0; j < colsA; j++)
-    {
-        A* aColPtr = matA.getColumnPointer(j);
+#pragma omp parallel for schedule(static)
+    for (uint32_t kk = 0; kk < rowsA; kk += BS)
+        for (uint32_t ii = 0; ii < innerK; ii += BS)
+            for (uint32_t jj = 0; jj < colsA; jj += BS)
+                for (uint32_t j = jj; j < std::min(jj + BS, colsA); j++)
+                {
+                    A* aColPtr = matA.getColumnPointer(j);
 
-        for (uint32_t k = 0; k < innerK; k++)
-        {
-            const A* bColPtr = matB.getColumnPointer(k);
-            A        val     = matC(k, j);
+                    for (uint32_t k = ii; k < std::min(ii + BS, innerK); k++)
+                    {
+                        const A* bColPtr = matB.getColumnPointer(k);
+                        A        val     = matC(k, j);
 
-            for (uint32_t i = 0; i < rowsA; i++)
-            {
-                aColPtr[i] -= bColPtr[i] * val;
-            }
-        }
-    }
+                        for (uint32_t i = kk; i < std::min(kk + BS, rowsA); i++)
+                        {
+                            aColPtr[i] -= bColPtr[i] * val;
+                        }
+                    }
+                }
 }
 template<typename A>
 inline A calculateDot(A* vec1, A* vec2, uint32_t size) {
