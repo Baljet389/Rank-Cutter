@@ -1,233 +1,105 @@
 #ifndef BIDIAGONAL_H
 #define BIDIAGONAL_H
 
-#include <vector>
-#include <cmath>
+#include "householder.h"
+#include "blockUpdate.h"
 #include "matrix.h"
 
 template<typename A>
-bool calculateHouseholderVector(std::vector<A>& x);
+void calculateBidiagonalFormBlocked(SVD<A>& svd);
 template<typename A>
-A calculateTau(const std::vector<A>& v);
-template<typename A>
-void calculateBidiagonalForm(Matrix<A>& mat, SVD<A>* svd);
+void generateBidiagPanel(HouseholderWS<A>& wsLeft,
+                         HouseholderWS<A>& wsRight,
+                         uint32_t          currBlockSize,
+                         uint32_t          col);
 template<typename A>
 A calculateBidiagonalFrobreniusNorm(const SubMatrixView<A>& subMat);
-template<typename A>
-struct BidiagonalWorkspace;
 
 template<typename A>
-bool applyLeftHouseholder(BidiagonalWorkspace<A>& ws, Matrix<A>& mat, uint32_t i);
-template<typename A>
-bool applyRightHouseholder(BidiagonalWorkspace<A>& ws, Matrix<A>& mat, uint32_t i);
+void calculateBidiagonalFormBlocked(SVD<A>& svd) {
+    Matrix<A>& U       = svd.U;
+    Matrix<A>& S       = svd.S;
+    Matrix<A>& V       = svd.V;
+    bool       updateU = (U.data.size() > 0);
+    bool       updateV = (V.data.size() > 0);
 
-template<typename A>
-void updateU(BidiagonalWorkspace<A>& ws, Matrix<A>& U, uint32_t i);
-template<typename A>
-void updateV(BidiagonalWorkspace<A>& ws, Matrix<A>& V, uint32_t i);
+    const uint32_t     rows         = S.rows;
+    const uint32_t     cols         = S.cols;
+    const uint32_t     minDimension = std::min(rows, cols);
+    constexpr uint32_t blockSize    = 3;
 
-template<typename A>
-struct BidiagonalWorkspace {
-    std::vector<A> vL;
-    std::vector<A> vR;
-    A              tauLeft;
-    A              tauRight;
-    void           reserve(uint32_t n) {
-        vL.reserve(n);
-        vR.reserve(n);
-    }
-};
+    Matrix<A> VL(rows, blockSize);
+    Matrix<A> VR(cols, blockSize);
 
+    Matrix<A> TL(blockSize, blockSize);
+    Matrix<A> TR(blockSize, blockSize);
+    Matrix<A> VTMultVStorage(blockSize, blockSize);
 
-template<typename A>
-void calculateBidiagonalForm(Matrix<A>& mat, SVD<A>* svd) {
-    bool shouldUpdateU = (svd != nullptr && svd->U.data.size() > 0);
-    bool shouldUpdateV = (svd != nullptr && svd->V.data.size() > 0);
+    Matrix<A>        placeholder(0, 0);
+    SubMatrixView<A> subPlaceholder(placeholder, 0, 0, 0, 0);
 
-    uint32_t               minDimension = std::min(mat.rows, mat.cols);
-    BidiagonalWorkspace<A> ws;
-    ws.reserve(minDimension);
-    for (uint32_t i = 0; i < minDimension; i++)
+    Matrix<A> W(rows, blockSize);
+    Matrix<A> Y(rows, blockSize);
+
+    HouseholderWS<A> wsLeft(S, VL, TL, VTMultVStorage);
+    HouseholderWS<A> wsRight(S, VR, TR, VTMultVStorage);
+    wsLeft.reserve(rows);
+    wsRight.reserve(cols);
+
+    for (uint32_t i = 0; i < minDimension; i += blockSize)
     {
-        bool reflectorNeededLeft = applyLeftHouseholder(ws, mat, i);
+        const uint32_t currBlockSize = std::min(blockSize, minDimension - i);
 
-        if (shouldUpdateU && reflectorNeededLeft)
+        VL.setValue(A(0));
+        VR.setValue(A(0));
+
+        TL.setValue(A(0));
+        TR.setValue(A(0));
+
+        generateBidiagPanel(wsLeft, wsRight, currBlockSize, i);
+
+        const uint32_t currentHeight = rows - i;
+
+        if (updateU)
         {
-            updateU(ws, svd->U, i);
+            SubMatrixView<A> activeV(VL, i, 0, currentHeight, currBlockSize);
+            SubMatrixView<A> activeT(TL, 0, 0, currBlockSize, currBlockSize);
+            SubMatrixView<A> trailingU(U, 0, i, rows, currentHeight);
+
+            BlockUpdateWorkspace<A> blockwsLeft(placeholder, placeholder, W, Y, activeV, activeT,
+                                                subPlaceholder, trailingU);
+            applyBlockReflectorToLeft(blockwsLeft);
         }
 
-        if (i == mat.cols - 1)
-            break;
+        if (!updateV || (i + 1 >= cols))
+            continue;
 
-        bool reflectorNeededRight = applyRightHouseholder(ws, mat, i);
-        if (shouldUpdateV && reflectorNeededRight)
-        {
-            updateV(ws, svd->V, i);
-        }
+        const uint32_t currentWidth = cols - (i + 1);
+
+        SubMatrixView<A> activeVR(VR, i + 1, 0, currentWidth, currBlockSize);
+        SubMatrixView<A> activeTR(TR, 0, 0, currBlockSize, currBlockSize);
+        SubMatrixView<A> trailingV(V, 0, i + 1, cols, currentWidth);
+
+        BlockUpdateWorkspace<A> blockwsRight(placeholder, placeholder, W, Y, activeVR, activeTR,
+                                             subPlaceholder, trailingV);
+        applyBlockReflectorToRight(blockwsRight);
     }
 }
 template<typename A>
-bool applyLeftHouseholder(BidiagonalWorkspace<A>& ws, Matrix<A>& mat, uint32_t i) {
-    auto& vL = ws.vL;
-
-    const uint32_t m = mat.rows - i;
-    const uint32_t n = mat.cols - i;
-    vL.resize(m);
-    for (uint32_t j = 0; j < m; j++)
-        vL[j] = mat(j + i, i);
-    // calculate v = x - (sign(x1))*||x||*e1)
-    bool reflectorNeededLeft = calculateHouseholderVector(vL);
-    if (!reflectorNeededLeft)
-        return false;
-
-    // and tau = 2 / (v^T * v)
-    A tauLeft  = calculateTau(vL);
-    ws.tauLeft = tauLeft;
-    // apply the transformation to A from the left: A = A - tau*v*(v^T*A)
-    // to submatrix A(i:rows, i:cols)
-    for (uint32_t j = 0; j < n; j++)
+void generateBidiagPanel(HouseholderWS<A>& wsLeft,
+                         HouseholderWS<A>& wsRight,
+                         uint32_t          currBlockSize,
+                         uint32_t          col) {
+    for (uint32_t i = col; i < col + currBlockSize; i++)
     {
-        A  dot          = 0;
-        A* matColumnPtr = mat.getColumnPointer(j + i);
+        applyLeftHouseholder(wsLeft, i, col, wsLeft.R.cols);
 
-        for (uint32_t k = 0; k < m; k++)
-            dot += vL[k] * matColumnPtr[k + i];
-        A prod = tauLeft * dot;
-        for (uint32_t k = 0; k < m; k++)
-        {
-            matColumnPtr[k + i] -= vL[k] * prod;
-        }
+        if (i != wsRight.R.cols - 1)
+            applyRightHouseholder(wsRight, i, col);
     }
-    return true;
+    updateTMatrix(wsLeft, col, currBlockSize);
+    updateTMatrix(wsRight, col, currBlockSize);
 }
-template<typename A>
-bool applyRightHouseholder(BidiagonalWorkspace<A>& ws, Matrix<A>& mat, uint32_t i) {
-
-    auto&          vR          = ws.vR;
-    const uint32_t startColumn = i + 1;
-    const uint32_t m           = mat.rows - i;
-    const uint32_t n           = mat.cols - startColumn;
-
-    // --- build vR ---
-    vR.resize(n);
-    for (uint32_t k = 0; k < n; ++k)
-        vR[k] = mat(i, startColumn + k);
-
-    // --- compute reflector ---
-    if (!calculateHouseholderVector(vR))
-        return false;
-
-    const A tau = calculateTau(vR);
-    ws.tauRight = tau;
-
-    // --- dots = A_sub * vR ---
-    std::vector<A> dots(m, A(0));
-
-    for (uint32_t k = 0; k < n; ++k)
-    {
-        const A vk  = vR[k];
-        A*      col = mat.getColumnPointer(startColumn + k) + i;
-
-        for (uint32_t j = 0; j < m; ++j)
-            dots[j] += col[j] * vk;
-    }
-
-    // --- A_sub -= tau * dots * vRᵀ ---
-    for (uint32_t k = 0; k < n; ++k)
-    {
-        const A scale = tau * vR[k];
-        A*      col   = mat.getColumnPointer(startColumn + k) + i;
-
-        for (uint32_t j = 0; j < m; ++j)
-            col[j] -= scale * dots[j];
-    }
-
-    return true;
-}
-template<typename A>
-void updateU(BidiagonalWorkspace<A>& ws, Matrix<A>& U, uint32_t i) {
-    const auto& vL  = ws.vL;
-    const A     tau = ws.tauLeft;
-
-    const uint32_t m = U.rows;
-    const uint32_t n = U.cols - i;
-
-    std::vector<A> dots(m, A(0));
-
-    // 1) dot = U * vL
-    for (uint32_t k = 0; k < n; k++)
-    {
-        const A vk  = vL[k];
-        A*      col = U.getColumnPointer(i + k);
-
-        for (uint32_t j = 0; j < m; ++j)
-            dots[j] += col[j] * vk;
-    }
-
-    // 2) U -= tau * dot * vLᵀ
-    for (uint32_t k = 0; k < n; k++)
-    {
-        const A scale = tau * vL[k];
-        A*      col   = U.getColumnPointer(i + k);
-
-        for (uint32_t j = 0; j < m; j++)
-            col[j] -= scale * dots[j];
-    }
-}
-template<typename A>
-void updateV(BidiagonalWorkspace<A>& ws, Matrix<A>& V, uint32_t i) {
-    const uint32_t startColumn = i + 1;
-    const auto&    vR          = ws.vR;
-    const A        tau         = ws.tauRight;
-
-    const uint32_t m = V.rows;
-    const uint32_t n = V.cols - startColumn;
-
-    std::vector<A> dots(m, A(0));
-
-    // 1) dots = V * vR
-    for (uint32_t k = 0; k < n; k++)
-    {
-        const A vk  = vR[k];
-        A*      col = V.getColumnPointer(startColumn + k);
-
-        for (uint32_t j = 0; j < m; j++)
-            dots[j] += col[j] * vk;
-    }
-
-    // 2) V -= tau * dots * vRᵀ
-    for (uint32_t k = 0; k < n; k++)
-    {
-        const A scale = tau * vR[k];
-        A*      col   = V.getColumnPointer(startColumn + k);
-
-        for (uint32_t j = 0; j < m; j++)
-            col[j] -= scale * dots[j];
-    }
-}
-template<typename A>
-bool calculateHouseholderVector(std::vector<A>& x) {
-    A normX = 0.0;
-    for (const auto& xi : x)
-        normX += xi * xi;
-
-    normX = std::sqrt(normX);
-    if (normX == 0)
-        return false;
-
-    A sign = (x[0] >= 0) ? 1 : -1;
-    x[0] += sign * normX;
-    return true;
-}
-template<typename A>
-A calculateTau(const std::vector<A>& v) {
-    A tau = 0;
-    for (const auto& vi : v)
-        tau += vi * vi;
-    tau = 2 / tau;
-    return tau;
-}
-
 template<typename A>
 A calculateBidiagonalFrobreniusNorm(const SubMatrixView<A>& subMat) {
     A        sum          = 0;

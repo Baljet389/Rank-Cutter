@@ -1,12 +1,14 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include "stdint.h"
 #include <vector>
 #include <iostream>
 #include <omp.h>
 #include <iomanip>
 #include <cassert>
+
+#include "stdint.h"
+
 
 template<typename T>
 struct Matrix;

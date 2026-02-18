@@ -3,8 +3,9 @@
 
 #include <random>
 #include <chrono>
-#include "matrix.h"
 #include <cassert>
+
+#include "matrix.h"
 
 struct Timer;
 template<typename A>

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+
 #include "bidiagonal.h"
 #include "utility.h"
 
@@ -84,7 +85,7 @@ SVD<A> calcSVD(const Matrix<A>& mat) {
     Timer  timer;
     SVD<A> svd(U, isWide ? physicalTranspose(mat) : mat, V);
     timer.startTimer();
-    calculateBidiagonalForm(svd.S, &svd);
+    calculateBidiagonalFormBlocked(svd);
     auto elapsed = timer.stopTimer();
     std::cout << "Bidiagonalization took " << elapsed.count() << " ms" << std::endl;
 

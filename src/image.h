@@ -2,10 +2,11 @@
 #define IMAGE_H
 
 #include <iostream>
+#include <string>
+
 #include "stb_image.h"
 #include "stb_image_write.h"
 #include "matrix.h"
-#include <string>
 #include "utility.h"
 #include "svd.h"
 #include "qr.h"

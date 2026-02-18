@@ -14,11 +14,14 @@ add_executable(${PROJECT_NAME}
 
 	src/matrix.h
 	src/svd.h
-	src/bidiagonal.h
+	
 	src/testSVD.h
 	src/qr.h
 	src/image.h
-	src/utility.h)
+	src/utility.h 
+	src/bidiagonal.h 
+	src/householder.h 
+	src/blockUpdate.h)
 
 target_include_directories(${PROJECT_NAME} SYSTEM BEFORE PRIVATE lib)
 

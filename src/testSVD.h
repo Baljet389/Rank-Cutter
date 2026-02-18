@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+
 #include "utility.h"
 #include "svd.h"
 #include "qr.h"
@@ -22,15 +23,16 @@ void assertOrthorgonality(const Matrix<A>& mat);
 
 
 void testAll() {
+    testQR();
     testSquareMatrixSVD();
     testThinMatrixSVD();
     testWideMatrixSVD();
-    testQR();
 }
 void testSquareMatrixSVD() {
     Matrix<double> mat(10, 10);
     fillMatrixRandomValues(mat, double(0), double(1));
     SVD<double> svd = calcSVD(mat);
+
     assertSVD<double>(svd, mat);
 }
 // m > n
@@ -46,7 +48,6 @@ void testWideMatrixSVD() {
     Matrix<double> mat(6, 10);
     fillMatrixRandomValues(mat, double(0), double(1));
 
-
     SVD<double> svd = calcSVD(mat);
     assertSVD(svd, mat);
 }
@@ -55,8 +56,9 @@ void testQR() {
     fillMatrixRandomValues(mat, double(0), double(1));
     Timer t;
     t.startTimer();
-    QR<double> qr      = calcQRBlocked(mat, true);
-    auto       elapsed = t.stopTimer();
+    QR<double> qr = calcQRBlocked(mat, true);
+
+    auto elapsed = t.stopTimer();
     std::cout << "QR took: " << elapsed.count() << "ms\n";
     assertOrthorgonality(qr.Q);
     assertQR(qr, mat);
