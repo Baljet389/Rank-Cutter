@@ -53,18 +53,18 @@ void applyRightHouseholder(HouseholderWS<A>& ws, uint32_t i, uint32_t col) {
     for (uint32_t k = 0; k < n; ++k)
     {
         const A vk  = vR[k];
-        A*      col = R.getColumnPointer(startColumn + k) + i;
+        A*   colPtr = R.getColumnPointer(startColumn + k) + i;
 
         for (uint32_t j = 0; j < m; ++j)
-            dots[j] += col[j] * vk;
+            dots[j] += colPtr[j] * vk;
     }
     for (uint32_t k = 0; k < n; ++k)
     {
         const A scale = tauRight * vR[k];
-        A*      col   = R.getColumnPointer(startColumn + k) + i;
+        A*     colPtr = R.getColumnPointer(startColumn + k) + i;
 
         for (uint32_t j = 0; j < m; ++j)
-            col[j] -= scale * dots[j];
+            colPtr[j] -= scale * dots[j];
     }
 
     ws.T(i - col, i - col) = tauRight;
