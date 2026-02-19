@@ -1,10 +1,7 @@
-#include "image.h"
-#include "testSVD.h"
+#include "args.h"
 
 
-int main() {
-    //compressImage<double>("C:/Git_Repo/myprojects/image-converter_c++/example_images/images.jpg",
-    //    "C:/Git_Repo/myprojects/image-converter_c++/example_images/imagesComp.png", 10, true);
-    testAll();
+int main(int argc, char* argv[]) {
+    parseArguments(argc, argv);
     return 0;
 }

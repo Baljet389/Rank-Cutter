@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(image_converter VERSION 1.0 LANGUAGES CXX)
+project(rac VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,9 +21,12 @@ add_executable(${PROJECT_NAME}
 	src/utility.h 
 	src/bidiagonal.h 
 	src/householder.h 
-	src/blockUpdate.h)
+	src/blockUpdate.h
+	src/args.h)
 
 target_include_directories(${PROJECT_NAME} SYSTEM BEFORE PRIVATE lib)
+add_compile_definitions(PROJECT_NAME=${PROJECT_NAME})
+add_compile_definitions(PROJECT_VERSION=${PROJECT_VERSION})
 
 if(MSVC)
 	target_compile_options(${PROJECT_NAME}

@@ -26,7 +26,7 @@ void calculateBidiagonalFormBlocked(SVD<A>& svd) {
     const uint32_t     rows         = S.rows;
     const uint32_t     cols         = S.cols;
     const uint32_t     minDimension = std::min(rows, cols);
-    constexpr uint32_t blockSize    = 3;
+    constexpr uint32_t blockSize    = 64;
 
     Matrix<A> VL(rows, blockSize);
     Matrix<A> VR(cols, blockSize);

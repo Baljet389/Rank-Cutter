@@ -25,7 +25,7 @@ QR<A> calcQRBlocked(const Matrix<A>& mat, bool updateQ) {
     Matrix<A>& Q            = qr.Q;
     Matrix<A>& R            = qr.R;
     uint32_t   minDimension = std::min(R.rows, R.cols);
-    uint32_t   blockSize    = 3;
+    uint32_t   blockSize    = 64;
 
     Matrix<A> V(R.rows, blockSize);
     Matrix<A> T(blockSize, blockSize);

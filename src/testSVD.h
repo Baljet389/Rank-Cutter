@@ -29,7 +29,7 @@ void testAll() {
     testWideMatrixSVD();
 }
 void testSquareMatrixSVD() {
-    Matrix<double> mat(10, 10);
+    Matrix<double> mat(1000, 1000);
     fillMatrixRandomValues(mat, double(0), double(1));
     SVD<double> svd = calcSVD(mat);
 

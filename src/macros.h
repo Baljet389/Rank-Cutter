@@ -11,3 +11,6 @@
             std::exit(EXIT_FAILURE); \
         } \
     } while (0)
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
