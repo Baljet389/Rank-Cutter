@@ -28,13 +28,11 @@
 To build the executable `rac`, use the standard CMake workflow:
 
 ```bash
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
+cmake -S . -B build
+cmake --build build
 ```
 
-The executable will be generated in `build/Release/rac`.
+The executable will be generated in `build`.
 
 ---
 
