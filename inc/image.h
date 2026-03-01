@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <string>
+#include <iostream>
+#include <cstdlib>
 
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -10,6 +12,16 @@
 #include "utility.h"
 #include "svd.h"
 #include "qr.h"
+
+#define ASSERT(condition, msg) \
+    do \
+    { \
+        if (!(condition)) \
+        { \
+            std::clog << "Fataler Fehler: " << msg << std::endl; \
+            std::exit(EXIT_FAILURE); \
+        } \
+    } while (0)
 
 
 template<typename A>

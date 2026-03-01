@@ -7,22 +7,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(OpenMP)
+include_directories(inc)
 
 add_executable(${PROJECT_NAME}
 	src/main.cpp
 	src/stb_impl.cpp
 
-	src/matrix.h
-	src/svd.h
+	"inc/matrix.h"
+	"inc/svd.h"
 	
-	src/testSVD.h
-	src/qr.h
-	src/image.h
-	src/utility.h 
-	src/bidiagonal.h 
-	src/householder.h 
-	src/blockUpdate.h
-	src/args.h)
+	"inc/qr.h"
+	"inc/image.h"
+	"inc/utility.h" 
+	"inc/bidiagonal.h" 
+	"inc/householder.h" 
+	"inc/blockUpdate.h"
+	"inc/args.h" 
+	"src/args.cpp")
 
 target_include_directories(${PROJECT_NAME} SYSTEM BEFORE PRIVATE lib)
 add_compile_definitions(PROJECT_NAME=${PROJECT_NAME})
@@ -32,7 +33,6 @@ if(MSVC)
 	target_compile_options(${PROJECT_NAME}
 	PRIVATE /W4 
 			/permissive- 
-			"/FI${CMAKE_CURRENT_SOURCE_DIR}/src/macros.h"
 			$<$<CONFIG:Release>:/O2 
 			/arch:AVX2 
 			/fp:fast>
@@ -47,11 +47,12 @@ else()
 			-O3 
 			#-fsanitize=address -g
 			#-Rpass-analysis=loop-vectorize
-			-include "${CMAKE_CURRENT_SOURCE_DIR}/src/macros.h" 
 	)
 	if(OpenMP_CXX_FOUND)
 		target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
 	endif()
 	# target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 endif()
- 
+
+add_subdirectory(test)
+  
