@@ -34,9 +34,7 @@ void assertQR(QR<A>& qr, Matrix<A>& origiMat);
 template<typename A>
 void assertOrthorgonality(const Matrix<A>& mat);
 template<typename T, typename Derived>
-void printMatrixMatlab(MatrixInterface<T, Derived>&mat, uint32_t precision = 5);
-
-
+void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision = 5);
 
 
 template<typename A>
@@ -106,13 +104,16 @@ void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision) {
     uint32_t rows = mat.getRows();
     uint32_t cols = mat.getCols();
 
-    if (rows == 0 || cols == 0) return;
+    if (rows == 0 || cols == 0)
+        return;
 
     std::vector<std::vector<std::string>> formattedData(rows, std::vector<std::string>(cols));
-    std::vector<size_t> colWidths(cols, 0);
+    std::vector<size_t>                   colWidths(cols, 0);
 
-    for (uint32_t j = 0; j < cols; j++) {
-        for (uint32_t i = 0; i < rows; i++) {
+    for (uint32_t j = 0; j < cols; j++)
+    {
+        for (uint32_t i = 0; i < rows; i++)
+        {
             std::stringstream ss;
             ss << std::fixed << std::setprecision(precision) << mat.get(i, j);
             formattedData[i][j] = ss.str();
@@ -121,8 +122,10 @@ void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision) {
         }
     }
 
-    for (uint32_t i = 0; i < rows; i++) {
-        for (uint32_t j = 0; j < cols; j++) {
+    for (uint32_t i = 0; i < rows; i++)
+    {
+        for (uint32_t j = 0; j < cols; j++)
+        {
             std::cout << std::setw(colWidths[j]) << formattedData[i][j];
 
             if (j < cols - 1)

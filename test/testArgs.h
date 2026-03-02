@@ -5,7 +5,7 @@
 #include "testSVD.h"
 
 namespace test {
-	void parseArgs(int argc, char* argv[]);
+void parseArgs(int argc, char* argv[]);
 
 }
 

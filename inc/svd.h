@@ -81,9 +81,9 @@ SVD<A> calcSVD(const Matrix<A>& mat) {
 
     Matrix<A> V(c, c);
     V.setIdentity();
-    
+
     SVD<A> svd(U, isWide ? physicalTranspose(mat) : mat, V);
-	calculateBidiagonalFormBlocked(svd);
+    calculateBidiagonalFormBlocked(svd);
     SVDWorkspace<A> ws;
     ws.reserve(std::max(r, c));
     SubMatrixView<A> subMat(svd.S, 0, 0, r, c);

@@ -52,16 +52,16 @@ void applyRightHouseholder(HouseholderWS<A>& ws, uint32_t i, uint32_t col) {
     std::vector<A> dots(m, A(0));
     for (uint32_t k = 0; k < n; ++k)
     {
-        const A vk  = vR[k];
-        A*   colPtr = R.getColumnPointer(startColumn + k) + i;
+        const A vk     = vR[k];
+        A*      colPtr = R.getColumnPointer(startColumn + k) + i;
 
         for (uint32_t j = 0; j < m; ++j)
             dots[j] += colPtr[j] * vk;
     }
     for (uint32_t k = 0; k < n; ++k)
     {
-        const A scale = tauRight * vR[k];
-        A*     colPtr = R.getColumnPointer(startColumn + k) + i;
+        const A scale  = tauRight * vR[k];
+        A*      colPtr = R.getColumnPointer(startColumn + k) + i;
 
         for (uint32_t j = 0; j < m; ++j)
             colPtr[j] -= scale * dots[j];
