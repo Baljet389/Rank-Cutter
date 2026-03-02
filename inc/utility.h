@@ -13,7 +13,7 @@ void fillMatrixRandomValues(Matrix<A>& mat, A disStart, A disStop);
 template<typename A>
 void reconstructSVD(SVD<A>& svd, Matrix<A>& res, uint32_t rank);
 template<typename A>
-inline A calculateDot(A* vec1, A* vec2, uint32_t size);
+inline A calculateDot(const A* vec1, const A* vec2, uint32_t size);
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
                          MatrixInterface<A, DerivedB>& matB,
@@ -21,19 +21,19 @@ void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
 
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
-                      MatrixInterface<A, DerivedB>& matB,
+                      const MatrixInterface<A, DerivedB>& matB,
                       MatrixInterface<A, DerivedR>& result);
 
 // calculates A = A - B * C^T
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
                                     MatrixInterface<A, DerivedB>& matB,
-                                    MatrixInterface<A, DerivedR>& matC);
+                                    const MatrixInterface<A, DerivedR>& matC);
 // calculates A = A - B * C
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
                                  MatrixInterface<A, DerivedB>& matB,
-                                 MatrixInterface<A, DerivedR>& matC);
+                                 const MatrixInterface<A, DerivedR>& matC);
 
 struct Timer {
     std::chrono::steady_clock::time_point start;
@@ -88,8 +88,8 @@ void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
                          MatrixInterface<A, DerivedB>& matB,
                          MatrixInterface<A, DerivedR>& result) {
 
-    assert(matA.isContiguous());
-    assert(matB.isContiguous());
+    static_assert(DerivedA::isContiguous());
+    static_assert(DerivedB::isContiguous());
     assert(matA.getRows() == matB.getRows());
 
     const uint32_t     colsA = matA.getCols();
@@ -119,11 +119,11 @@ void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
 }
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
-                      MatrixInterface<A, DerivedB>& matB,
+                      const MatrixInterface<A, DerivedB>& matB,
                       MatrixInterface<A, DerivedR>& result) {
 
-    assert(matA.isContiguous());
-    assert(matB.isContiguous());
+    static_assert(DerivedA::isContiguous());
+    static_assert(DerivedB::isContiguous());
     assert(matA.getCols() == matB.getRows());
 
     const uint32_t     rowsA = matA.getRows();
@@ -154,10 +154,10 @@ void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
                                     MatrixInterface<A, DerivedB>& matB,
-                                    MatrixInterface<A, DerivedR>& matC) {
+                                    const MatrixInterface<A, DerivedR>& matC) {
 
-    assert(matA.isContiguous());
-    assert(matB.isContiguous());
+    static_assert(DerivedA::isContiguous());
+    static_assert(DerivedB::isContiguous());
     assert(matA.getRows() == matB.getRows());
     assert(matA.getCols() == matC.getRows());
     assert(matB.getCols() == matC.getCols());
@@ -188,10 +188,10 @@ void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
 void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
                                  MatrixInterface<A, DerivedB>& matB,
-                                 MatrixInterface<A, DerivedR>& matC) {
+                                 const MatrixInterface<A, DerivedR>& matC) {
 
-    assert(matA.isContiguous());
-    assert(matB.isContiguous());
+    static_assert(DerivedA::isContiguous());
+    static_assert(DerivedB::isContiguous());
 
     assert(matA.getRows() == matB.getRows());
     assert(matB.getCols() == matC.getRows());
@@ -223,7 +223,7 @@ void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
                 }
 }
 template<typename A>
-inline A calculateDot(A* vec1, A* vec2, uint32_t size) {
+inline A calculateDot(const A* vec1, const A* vec2, uint32_t size) {
     assert(vec1);
     assert(vec2);
 

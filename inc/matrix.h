@@ -55,7 +55,7 @@ struct Matrix: public MatrixInterface<T, Matrix<T>> {
     void setValues(std::initializer_list<T> list) {
         std::copy(list.begin(), list.end(), data.begin());
     }
-    inline bool isContiguous() const { return true; }
+    constexpr static bool isContiguous() { return true; }
     void        setIdentity() {
         for (uint32_t i = 0; i < rows; i++)
         {
@@ -85,7 +85,7 @@ struct TransposeView: public MatrixInterface<T, TransposeView<T>> {
 
     inline T    get(uint32_t r, uint32_t c) const { return mat.get(c, r); }
     inline T&   get(uint32_t r, uint32_t c) { return mat.get(c, r); }
-    inline bool isContiguous() const { return false; }
+    constexpr static bool isContiguous() { return false; }
     inline void set(uint32_t r, uint32_t c, T value) { mat.set(c, r, value); }
 
     std::vector<T>& getData() { return mat.data; }
@@ -106,7 +106,7 @@ struct SubMatrixView: public MatrixInterface<T, SubMatrixView<T>> {
     inline T get(uint32_t r, uint32_t c) const { return mat.get(r + rowOffset, c + colOffset); }
 
     inline T&   get(uint32_t r, uint32_t c) { return mat.get(r + rowOffset, c + colOffset); }
-    inline bool isContiguous() const { return true; }
+    constexpr static bool isContiguous() { return true; }
 
     inline void set(uint32_t r, uint32_t c, T value) {
         mat.set(r + rowOffset, c + colOffset, value);
@@ -133,7 +133,7 @@ struct TransposeSubMatrix: public MatrixInterface<T, TransposeSubMatrix<T>> {
     inline void     set(uint32_t r, uint32_t c, T value) { subMat.set(c, r, value); }
     T&              operator()(uint32_t r, uint32_t c) { return get(r, c); }
     const T         operator()(uint32_t r, uint32_t c) const { return get(r, c); }
-    inline bool     isContiguous() const { return false; }
+    constexpr static bool     isContiguous() { return false; }
     std::vector<T>& getData() { return subMat.getData(); }
 };
 // CRTP
@@ -162,9 +162,9 @@ struct MatrixInterface {
         std::vector<T>& vec = static_cast<Derived*>(this)->getData();
         std::fill(vec.begin(), vec.end(), value);
     }
-    bool isContiguous() const { return static_cast<const Derived*>(this)->isContiguous(); }
+    constexpr static bool isContiguous() { return Derived::isContiguous(); }
     T*   getColumnPointer(uint32_t col) {
-        assert(isContiguous());
+        static_assert(isContiguous());
         return static_cast<Derived*>(this)->getColumnPointer(col);
     }
 };
