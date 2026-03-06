@@ -1,10 +1,18 @@
 #include "testSVD.h"
 
 
-void testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print) {
+void test::testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time) {
     Matrix<double> mat(r, c);
     fillMatrixRandomValues(mat, double(0), double(1));
+    Timer t;
+    t.startTimer();
+    if (time) 
+        std::cout << "Start Timer\n";
+    
     SVD<double> svd = calcSVD(mat);
+    if (time) 
+        std::cout << "SVD took " << t.stopTimer().count() << "\n";
+    
 
     assertOrthorgonality(svd.U);
     assertOrthorgonality(svd.V);
@@ -22,10 +30,16 @@ void testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print) {
         printMatrixMatlab(svd.V, precision);
     }
 }
-void testQR(uint32_t r, uint32_t c, uint32_t precision, bool print) {
+void test::testQR(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time) {
     Matrix<double> mat(r, c);
     fillMatrixRandomValues(mat, double(0), double(1));
+    Timer t;
+    t.startTimer();
+    if (time)
+        std::cout << "Start Timer\n";
     QR<double> qr = calcQRBlocked(mat, true);
+    if (time)
+        std::cout << "QR took " << t.stopTimer().count() << "\n";
 
     assertOrthorgonality(qr.Q);
     assertQR(qr, mat);

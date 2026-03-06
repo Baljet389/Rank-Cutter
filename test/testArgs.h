@@ -3,6 +3,7 @@
 
 #include "argparse.hpp"
 #include "testSVD.h"
+#include "utility.h"
 
 namespace test {
 void parseArgs(int argc, char* argv[]);

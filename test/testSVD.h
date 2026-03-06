@@ -25,20 +25,21 @@
         } \
     } while (0)
 
-void testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print);
-void testQR(uint32_t r, uint32_t c, uint32_t precision, bool print);
-template<typename A>
-void assertSVD(SVD<A>& svd, Matrix<A>& origiMat);
-template<typename A>
-void assertQR(QR<A>& qr, Matrix<A>& origiMat);
-template<typename A>
-void assertOrthorgonality(const Matrix<A>& mat);
-template<typename T, typename Derived>
-void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision = 5);
+namespace test {
+    void testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time = false);
+    void testQR(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time = false);
+    template<typename A>
+    void assertSVD(SVD<A>& svd, Matrix<A>& origiMat);
+    template<typename A>
+    void assertQR(QR<A>& qr, Matrix<A>& origiMat);
+    template<typename A>
+    void assertOrthorgonality(const Matrix<A>& mat);
+    template<typename T, typename Derived>
+    void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision = 5);
+}
 
-
 template<typename A>
-void assertSVD(SVD<A>& svd, Matrix<A>& origiMat) {
+void test::assertSVD(SVD<A>& svd, Matrix<A>& origiMat) {
     Matrix<A>&  mat = svd.S;
     std::string whichMatrix =
       (mat.rows == mat.cols) ? "square" : ((mat.rows > mat.cols) ? "thin" : "wide");
@@ -60,7 +61,7 @@ void assertSVD(SVD<A>& svd, Matrix<A>& origiMat) {
     std::cout << "Max difference: " << maxDiff << "\n";
 }
 template<typename A>
-void assertQR(QR<A>& qr, Matrix<A>& origiMat) {
+void test::assertQR(QR<A>& qr, Matrix<A>& origiMat) {
     Matrix<A>&  Q           = qr.Q;
     Matrix<A>&  R           = qr.R;
     std::string whichMatrix = (R.rows == R.cols) ? "square" : ((R.rows > R.cols) ? "thin" : "wide");
@@ -80,7 +81,7 @@ void assertQR(QR<A>& qr, Matrix<A>& origiMat) {
     std::cout << "Max difference: " << maxDiff << "\n";
 }
 template<typename A>
-void assertOrthorgonality(const Matrix<A>& mat) {
+void test::assertOrthorgonality(const Matrix<A>& mat) {
     for (uint32_t i = 0; i < mat.cols; i++)
     {
         for (uint32_t j = 0; j < mat.cols; j++)
@@ -100,7 +101,7 @@ void assertOrthorgonality(const Matrix<A>& mat) {
 }
 
 template<typename T, typename Derived>
-void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision) {
+void test::printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision) {
     uint32_t rows = mat.getRows();
     uint32_t cols = mat.getCols();
 
