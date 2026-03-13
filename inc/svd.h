@@ -32,10 +32,9 @@ void applyRightGivensRotation(SubMatrixView<A>&              mat,
                               std::vector<RotationEntry<A>>& rot,
                               bool                           updateV);
 template<typename A>
-std::vector<uint32_t>
-svdIteration(SubMatrixView<A>& mat, SVDWorkspace<A>& ws, SVD<A>* svd = nullptr);
+std::vector<uint32_t> svdIteration(SubMatrixView<A>& mat, SVDWorkspace<A>& ws, SVD<A>& svd);
 template<typename A>
-void svdRecursive(SubMatrixView<A>& subMat, SVDWorkspace<A>& ws, SVD<A>* svd = nullptr);
+void svdRecursive(SubMatrixView<A>& subMat, SVDWorkspace<A>& ws, SVD<A>& svd);
 template<typename A>
 void applyFusedRotation(Matrix<A>&                           target,
                         const std::vector<RotationEntry<A>>& rotations,
@@ -96,7 +95,7 @@ SVD<A> calcSVD(const Matrix<A>& mat) {
     SVDWorkspace<A> ws;
     ws.reserve(std::max(r, c));
     SubMatrixView<A> subMat(svd.S, 0, 0, r, c);
-    svdRecursive(subMat, ws, &svd);
+    svdRecursive(subMat, ws, svd);
     if (isWide)
     {
         // If we computed SVD of A^T = U S V^T,
@@ -112,7 +111,7 @@ SVD<A> calcSVD(const Matrix<A>& mat) {
 
 
 template<typename A>
-void svdRecursive(SubMatrixView<A>& subMat, SVDWorkspace<A>& ws, SVD<A>* svd) {
+void svdRecursive(SubMatrixView<A>& subMat, SVDWorkspace<A>& ws, SVD<A>& svd) {
     if (subMat.cols <= 1 || subMat.rows <= 1)
         return;
 
@@ -138,29 +137,28 @@ void svdRecursive(SubMatrixView<A>& subMat, SVDWorkspace<A>& ws, SVD<A>* svd) {
     }
 }
 template<typename A>
-std::vector<uint32_t> svdIteration(SubMatrixView<A>& mat, SVDWorkspace<A>& ws, SVD<A>* svd) {
+std::vector<uint32_t> svdIteration(SubMatrixView<A>& mat, SVDWorkspace<A>& ws, SVD<A>& svd) {
     uint32_t n     = std::min(mat.rows, mat.cols);
     A        shift = calculateWilkinsonShift(mat);
 
-    bool updateU = (svd != nullptr && svd->U.data.size() > 0);
-    bool updateV = (svd != nullptr && svd->V.data.size() > 0);
+    bool updateU = (svd.U.data.size() > 0);
+    bool updateV = (svd.V.data.size() > 0);
     ws.clear();
     std::vector<uint32_t> deflationIndices;
     // Introduce the bulge
     applyInitialRightGivensRotation(mat, shift, ws.rotR, updateV);
     // Chase the bulge
-
     for (uint32_t k = 0; k < n - 1; k++)
     {
         applyLeftGivensRotation(mat, k, ws.rotL, updateU);
         if (k < n - 2)
             applyRightGivensRotation(mat, k, ws.rotR, updateV);
     }
-    if (svd != nullptr)
-    {
-        applyFusedRotation(svd->U, ws.rotL, mat.rowOffset);
-        applyFusedRotation(svd->V, ws.rotR, mat.colOffset);
-    }
+    if (updateU)
+        applyFusedRotation(svd.U, ws.rotL, mat.rowOffset);
+    if (updateV)
+        applyFusedRotation(svd.V, ws.rotR, mat.colOffset);
+
     A tolerance = 2.2e-15 * calculateBidiagonalFrobreniusNorm(mat);
 
     for (uint32_t i = 0; i < n - 1; i++)
