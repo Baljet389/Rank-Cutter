@@ -6,13 +6,13 @@ void test::testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print, bool 
     fillMatrixRandomValues(mat, double(0), double(1));
     Timer t;
     t.startTimer();
-    if (time) 
+    if (time)
         std::cout << "Start Timer\n";
-    
+
     SVD<double> svd = calcSVD(mat);
-    if (time) 
+    if (time)
         std::cout << "SVD took " << t.stopTimer().count() << "\n";
-    
+
 
     assertOrthorgonality(svd.U);
     assertOrthorgonality(svd.V);

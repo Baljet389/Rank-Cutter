@@ -56,7 +56,7 @@ struct Matrix: public MatrixInterface<T, Matrix<T>> {
         std::copy(list.begin(), list.end(), data.begin());
     }
     constexpr static bool isContiguous() { return true; }
-    void        setIdentity() {
+    void                  setIdentity() {
         for (uint32_t i = 0; i < rows; i++)
         {
             for (uint32_t j = 0; j < cols; j++)
@@ -83,10 +83,10 @@ struct TransposeView: public MatrixInterface<T, TransposeView<T>> {
         rows(m.cols),
         cols(m.rows) {}
 
-    inline T    get(uint32_t r, uint32_t c) const { return mat.get(c, r); }
-    inline T&   get(uint32_t r, uint32_t c) { return mat.get(c, r); }
+    inline T              get(uint32_t r, uint32_t c) const { return mat.get(c, r); }
+    inline T&             get(uint32_t r, uint32_t c) { return mat.get(c, r); }
     constexpr static bool isContiguous() { return false; }
-    inline void set(uint32_t r, uint32_t c, T value) { mat.set(c, r, value); }
+    inline void           set(uint32_t r, uint32_t c, T value) { mat.set(c, r, value); }
 
     std::vector<T>& getData() { return mat.data; }
 };
@@ -105,7 +105,7 @@ struct SubMatrixView: public MatrixInterface<T, SubMatrixView<T>> {
 
     inline T get(uint32_t r, uint32_t c) const { return mat.get(r + rowOffset, c + colOffset); }
 
-    inline T&   get(uint32_t r, uint32_t c) { return mat.get(r + rowOffset, c + colOffset); }
+    inline T& get(uint32_t r, uint32_t c) { return mat.get(r + rowOffset, c + colOffset); }
     constexpr static bool isContiguous() { return true; }
 
     inline void set(uint32_t r, uint32_t c, T value) {
@@ -128,13 +128,13 @@ struct TransposeSubMatrix: public MatrixInterface<T, TransposeSubMatrix<T>> {
         subMat(sm),
         rows(sm.cols),
         cols(sm.rows) {}
-    inline T        get(uint32_t r, uint32_t c) const { return subMat.get(c, r); }
-    inline T&       get(uint32_t r, uint32_t c) { return subMat.get(c, r); }
-    inline void     set(uint32_t r, uint32_t c, T value) { subMat.set(c, r, value); }
-    T&              operator()(uint32_t r, uint32_t c) { return get(r, c); }
-    const T         operator()(uint32_t r, uint32_t c) const { return get(r, c); }
-    constexpr static bool     isContiguous() { return false; }
-    std::vector<T>& getData() { return subMat.getData(); }
+    inline T              get(uint32_t r, uint32_t c) const { return subMat.get(c, r); }
+    inline T&             get(uint32_t r, uint32_t c) { return subMat.get(c, r); }
+    inline void           set(uint32_t r, uint32_t c, T value) { subMat.set(c, r, value); }
+    T&                    operator()(uint32_t r, uint32_t c) { return get(r, c); }
+    const T               operator()(uint32_t r, uint32_t c) const { return get(r, c); }
+    constexpr static bool isContiguous() { return false; }
+    std::vector<T>&       getData() { return subMat.getData(); }
 };
 // CRTP
 template<typename T, typename Derived>
@@ -163,7 +163,7 @@ struct MatrixInterface {
         std::fill(vec.begin(), vec.end(), value);
     }
     constexpr static bool isContiguous() { return Derived::isContiguous(); }
-    T*   getColumnPointer(uint32_t col) {
+    T*                    getColumnPointer(uint32_t col) {
         static_assert(isContiguous());
         return static_cast<Derived*>(this)->getColumnPointer(col);
     }

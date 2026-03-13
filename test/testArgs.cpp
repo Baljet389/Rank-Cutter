@@ -25,9 +25,9 @@ void test::parseArgs(int argc, char* argv[]) {
       .implicit_value(true);
 
     program.add_argument("-t", "--time")
-        .help("Stopping the time (using std::chrono)")
-        .default_value(false)
-        .implicit_value(true);
+      .help("Stopping the time (using std::chrono)")
+      .default_value(false)
+      .implicit_value(true);
 
     argparse::ArgumentParser svd_command("svd");
     svd_command.add_description("Run SVD test");
@@ -50,20 +50,21 @@ void test::parseArgs(int argc, char* argv[]) {
     auto cols  = program.get<uint32_t>("--cols");
     auto prec  = program.get<uint32_t>("--precision");
     bool print = !program.get<bool>("--no-print");
-    bool time = program.get<bool>("--time");
+    bool time  = program.get<bool>("--time");
 
     Timer t;
     t.startTimer();
 
     if (time)
         std::cout << "Start Timer: \n";
-    
+
     if (program.is_subcommand_used(svd_command))
     {
         std::cout << "Running SVD: " << rows << "x" << cols << ", Precision: " << prec
                   << ", Print: " << (print ? "Yes" : "No") << "\n";
         testSVD(rows, cols, prec, print, time);
-        if (time) {
+        if (time)
+        {
             auto duration = t.stopTimer();
             std::cout << "SVD test took: " << duration.count() << "ms\n";
         }
@@ -73,7 +74,8 @@ void test::parseArgs(int argc, char* argv[]) {
         std::cout << "Running QR: " << rows << "x" << cols << ", Precision: " << prec
                   << ", Print: " << (print ? "Yes" : "No") << "\n";
         testQR(rows, cols, prec, print, time);
-        if (time) {
+        if (time)
+        {
             auto duration = t.stopTimer();
             std::cout << "QR test took: " << duration.count() << "ms\n";
         }

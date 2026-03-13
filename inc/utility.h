@@ -20,19 +20,19 @@ void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
                          MatrixInterface<A, DerivedR>& result);
 
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
-void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
+void matrixMultMatrix(MatrixInterface<A, DerivedA>&       matA,
                       const MatrixInterface<A, DerivedB>& matB,
-                      MatrixInterface<A, DerivedR>& result);
+                      MatrixInterface<A, DerivedR>&       result);
 
 // calculates A = A - B * C^T
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
-void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
-                                    MatrixInterface<A, DerivedB>& matB,
+void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>&       matA,
+                                    MatrixInterface<A, DerivedB>&       matB,
                                     const MatrixInterface<A, DerivedR>& matC);
 // calculates A = A - B * C
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
-void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
-                                 MatrixInterface<A, DerivedB>& matB,
+void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>&       matA,
+                                 MatrixInterface<A, DerivedB>&       matB,
                                  const MatrixInterface<A, DerivedR>& matC);
 
 struct Timer {
@@ -118,9 +118,9 @@ void transposeMultMatrix(MatrixInterface<A, DerivedA>& matA,
                 }
 }
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
-void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
+void matrixMultMatrix(MatrixInterface<A, DerivedA>&       matA,
                       const MatrixInterface<A, DerivedB>& matB,
-                      MatrixInterface<A, DerivedR>& result) {
+                      MatrixInterface<A, DerivedR>&       result) {
 
     static_assert(DerivedA::isContiguous());
     static_assert(DerivedB::isContiguous());
@@ -152,8 +152,8 @@ void matrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
 }
 
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
-void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
-                                    MatrixInterface<A, DerivedB>& matB,
+void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>&       matA,
+                                    MatrixInterface<A, DerivedB>&       matB,
                                     const MatrixInterface<A, DerivedR>& matC) {
 
     static_assert(DerivedA::isContiguous());
@@ -186,8 +186,8 @@ void matrixMinusMatrixMultTranspose(MatrixInterface<A, DerivedA>& matA,
                 }
 }
 template<typename A, typename DerivedA, typename DerivedB, typename DerivedR>
-void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>& matA,
-                                 MatrixInterface<A, DerivedB>& matB,
+void matrixMinusMatrixMultMatrix(MatrixInterface<A, DerivedA>&       matA,
+                                 MatrixInterface<A, DerivedB>&       matB,
                                  const MatrixInterface<A, DerivedR>& matC) {
 
     static_assert(DerivedA::isContiguous());

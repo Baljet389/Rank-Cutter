@@ -26,16 +26,16 @@
     } while (0)
 
 namespace test {
-    void testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time = false);
-    void testQR(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time = false);
-    template<typename A>
-    void assertSVD(SVD<A>& svd, Matrix<A>& origiMat);
-    template<typename A>
-    void assertQR(QR<A>& qr, Matrix<A>& origiMat);
-    template<typename A>
-    void assertOrthorgonality(const Matrix<A>& mat);
-    template<typename T, typename Derived>
-    void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision = 5);
+void testSVD(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time = false);
+void testQR(uint32_t r, uint32_t c, uint32_t precision, bool print, bool time = false);
+template<typename A>
+void assertSVD(SVD<A>& svd, Matrix<A>& origiMat);
+template<typename A>
+void assertQR(QR<A>& qr, Matrix<A>& origiMat);
+template<typename A>
+void assertOrthorgonality(const Matrix<A>& mat);
+template<typename T, typename Derived>
+void printMatrixMatlab(MatrixInterface<T, Derived>& mat, uint32_t precision = 5);
 }
 
 template<typename A>

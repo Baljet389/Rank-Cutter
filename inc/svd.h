@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <numeric>
 
 #include "bidiagonal.h"
 #include "utility.h"
@@ -40,6 +41,14 @@ void applyFusedRotation(Matrix<A>&                           target,
                         const std::vector<RotationEntry<A>>& rotations,
                         uint32_t                             offset);
 
+template<typename A>
+void changeSignColumn(Matrix<A>& mat, uint32_t col);
+template<typename A>
+void setSingularValuesPositive(SVD<A>& svd);
+template<typename A>
+void sortSVD(SVD<A>& svd);
+template<typename A>
+void copyColumn(Matrix<A>& mat1, uint32_t idx1, Matrix<A>& mat2, uint32_t idx2);
 
 template<typename A>
 struct SVDWorkspace {
@@ -96,7 +105,8 @@ SVD<A> calcSVD(const Matrix<A>& mat) {
         svd.S = physicalTranspose(svd.S);
         swapMatrices(svd.U, svd.V);
     }
-
+    setSingularValuesPositive(svd);
+    sortSVD(svd);
     return svd;
 }
 
@@ -290,6 +300,71 @@ void applyFusedRotation(Matrix<A>&                           target,
             col2Pointer[i] = s * a - c * b;
         }
     }
+}
+
+template<typename A>
+void changeSignColumn(Matrix<A>& mat, uint32_t col) {
+    for (uint32_t i = 0; i < mat.rows; i++)
+    {
+        mat(i, col) = -mat(i, col);
+    }
+}
+
+template<typename A>
+void setSingularValuesPositive(SVD<A>& svd) {
+    Matrix<A>& U            = svd.U;
+    Matrix<A>& S            = svd.S;
+    uint32_t   minDimension = std::min(S.rows, S.cols);
+    for (uint32_t i = 0; i < minDimension; i++)
+    {
+        if (S(i, i) < static_cast<A>(0))
+        {
+
+            S(i, i) = -S(i, i);
+            changeSignColumn(U, i);
+        }
+    }
+}
+
+template<typename A>
+void sortSVD(SVD<A>& svd) {
+
+    Matrix<A>& U = svd.U;
+    Matrix<A>& S = svd.S;
+    Matrix<A>& V = svd.V;
+
+    uint32_t              minDimension = std::min(S.rows, S.cols);
+    std::vector<uint32_t> indices(minDimension);
+
+    std::iota(indices.begin(), indices.end(), 0);
+    std::sort(indices.begin(), indices.end(),
+              [&](uint32_t a, uint32_t b) { return S(a, a) > S(b, b); });
+
+    Matrix<A> newU = U;
+    Matrix<A> newV = V;
+    Matrix<A> newS = S;
+
+    for (uint32_t i = 0; i < minDimension; i++)
+    {
+        uint32_t oldIdx = indices[i];
+        copyColumn(U, oldIdx, newU, i);
+        copyColumn(V, oldIdx, newV, i);
+        newS(i, i) = S(oldIdx, oldIdx);
+    }
+
+    U = newU;
+    S = newS;
+    V = newV;
+}
+
+template<typename A>
+void copyColumn(Matrix<A>& mat1, uint32_t idx1, Matrix<A>& mat2, uint32_t idx2) {
+
+    assert(mat1.rows == mat2.rows);
+    A* mat1Point = mat1.getColumnPointer(idx1);
+    A* mat2Point = mat2.getColumnPointer(idx2);
+
+    std::copy(mat1Point, mat1Point + mat1.rows, mat2Point);
 }
 
 #endif
